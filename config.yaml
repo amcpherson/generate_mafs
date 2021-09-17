@@ -1,0 +1,11 @@
+# This file should contain everything to configure the workflow on a global scale.
+# In case of sample based data, it should be complemented by a samples.tsv file that contains
+# one row per sample. It can be parsed easily via pandas.
+
+metadata: "../metadata/isabl/apollo_samples.csv"
+intermediate_dir: "results/intermediate"
+results_dir: "results/"
+log_dir: "logs/"
+oncokb_api_key: "0194caba-e8d6-449d-8d77-9074825dcebc"
+brcaexchange: "/juno/work/shah/reference/brcaexchange/output/variants_output.tsv"
+
