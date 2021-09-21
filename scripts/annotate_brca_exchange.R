@@ -10,8 +10,8 @@ brcaex <- fread(snakemake@config$brcaexchange) %>%
   mutate(brcaexchange = TRUE) %>% 
   rename(clinical_significance_brcaexchange = clinical_significance_enigma)
            
-maf <- fread(snakemake@input$maf)
+maf <- fread(snakemake@input[[1]])
 
 merged <- brcaex[maf, on = .(chr_hg19 == Chromosome, pos_hg19 == Start_Position, ref_hg19 == Reference_Allele, alt_hg19 == Tumor_Seq_Allele2)]
 
-fwrite(merged, snakemake@output$maf, sep = "\t")
+fwrite(merged, snakemake@output[[1]], sep = "\t")

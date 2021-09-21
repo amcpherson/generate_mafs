@@ -30,9 +30,8 @@ for individual, indiv_metadata in metadata.groupby('individual'):
 
 rule all:
     input:
-        os.path.join(results_dir, 'cohort_oncokb.maf'),
         os.path.join(results_dir, 'cohort.maf'),
-        os.path.join(results_dir, 'cohort_brcaexchange.maf')
+        os.path.join(results_dir, 'cohort_filtered.maf')
 
 # Somatic
 #
@@ -104,24 +103,22 @@ rule germline_merge_mafs:
 # Cohort somatic and germline
 #
 
-rule filter_cohort_maf:
+rule merge_somatic_germline:
     input: 
-        somatic = os.path.join(intermediate_dir, 'somatic.maf'),
-        germline = os.path.join(intermediate_dir, 'germline.maf')
-    output: os.path.join(results_dir, 'cohort.maf')
-    singularity: "docker://rocker/tidyverse"
-    script: "scripts/filter_maf.R"
-
-rule oncokbmaf:
-    input: os.path.join(results_dir, 'cohort.maf')
-    output: os.path.join(results_dir, 'cohort_oncokb.maf')
+        os.path.join(intermediate_dir, 'somatic.maf'),
+        os.path.join(intermediate_dir, 'germline.maf')
+    output: os.path.join(intermediate_dir, 'merged.maf')
     singularity: "docker://amcpherson/filtermafs"
-    script: "scripts/filter_oncokb_maf.py"
+    script: "scripts/merge_somatic_germline.py"
 
 rule annotate_brcaexchange:
-    input: 
-        maf = os.path.join(results_dir, 'cohort.maf')
-    output:
-        maf = os.path.join(results_dir, 'cohort_brcaexchange.maf')
+    input: os.path.join(intermediate_dir, 'merged.maf')
+    output: os.path.join(results_dir, 'cohort.maf')
     singularity: "docker://rocker/tidyverse"
     script: "scripts/annotate_brca_exchange.R"
+
+rule filter_maf:
+    input: os.path.join(results_dir, 'cohort.maf')
+    output: os.path.join(results_dir, 'cohort_filtered.maf')
+    singularity: "docker://amcpherson/filtermafs"
+    script: "scripts/filter_maf.py"
