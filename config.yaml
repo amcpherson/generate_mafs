@@ -8,4 +8,4 @@ results_dir: "results/"
 log_dir: "logs/"
 oncokb_api_key: "0194caba-e8d6-449d-8d77-9074825dcebc"
 brcaexchange: "/juno/work/shah/reference/brcaexchange/output/variants_output.tsv"
-
+scripts_dir: "./scripts"
