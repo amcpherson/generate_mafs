@@ -21,7 +21,7 @@ brca_exchange = brca_exchange[[
     'clinical_significance_brcaexchange',
 ]]
 
-df = pd.read_csv(snakemake.input[0], sep='\t', comment='#', dtype='str')
+df = dd.read_csv(snakemake.input[0], sep='\t', comment='#', dtype='str')
 
 df['Start_Position'] = df['Start_Position'].astype(int)
 
