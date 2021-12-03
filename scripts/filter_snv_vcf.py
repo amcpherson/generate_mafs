@@ -18,6 +18,17 @@ def read_vcf(vcf_filename):
     return data
 
 
+exclude_classes = [
+    "Silent",
+    "Intron",
+    "IGR",
+    "3'UTR",
+    "5'UTR",
+    "3'Flank",
+    "5'Flank",
+]
+
+
 def filter_vcf(consensus_somatic_maf, museq_paired_annotated, strelka_snv_annotated, output_maf):
     """ Filter maf using museq and strelka vcf.
     """
@@ -51,6 +62,8 @@ def filter_vcf(consensus_somatic_maf, museq_paired_annotated, strelka_snv_annota
     wgs_maf_data = wgs_maf_data.query('Variant_Type != "SNP" or (museq_snv_predicted == 1 and strelka_snv_predicted == 1)')
 
     wgs_maf_data = wgs_maf_data.drop(['chrom', 'coord', 'ref', 'alt', 'qual', 'museq_snv_predicted', 'qual_strelka_snv', 'strelka_snv_predicted'], axis=1)
+
+    wgs_maf_data = wgs_maf_data[~wgs_maf_data['Variant_Classification'].isin(exclude_classes)]
 
     wgs_maf_data.to_csv(output_maf, sep='\t', index=False)
 

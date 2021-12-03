@@ -49,20 +49,14 @@ rule somatic_filter_maf:
     singularity: "docker://amcpherson/filtermafs"
     shell: 'python {params.scripts_dir}/filter_snv_vcf.py {input.consensus_somatic_maf} {input.museq_paired_annotated} {input.strelka_snv_annotated} {output}'
 
-rule somatic_impact_maf:
-    input: os.path.join(intermediate_dir, 'somatic_{tumor_sample_id}.filtered.maf')
-    output: os.path.join(intermediate_dir, 'somatic_{tumor_sample_id}.filtered.impactful.maf')
-    singularity: "docker://rocker/tidyverse"
-    script: "scripts/filter_impact_maf.R"
-
 rule somatic_annotate_maf:
-    input: os.path.join(intermediate_dir, 'somatic_{tumor_sample_id}.filtered.impactful.maf')
-    output: os.path.join(intermediate_dir, 'somatic_{tumor_sample_id}.filtered.impactful.annotated.maf')
+    input: os.path.join(intermediate_dir, 'somatic_{tumor_sample_id}.filtered.maf')
+    output: os.path.join(intermediate_dir, 'somatic_{tumor_sample_id}.filtered.annotated.maf')
     singularity: "docker://amcpherson/oncokb-annotator"
     shell: 'python /oncokb-annotator/MafAnnotator.py -i {input} -o {output} -b {oncokb_api_key}'
 
 rule somatic_merge_mafs:
-    input: expand(os.path.join(intermediate_dir, 'somatic_{tumor_sample_id}.filtered.impactful.annotated.maf'), tumor_sample_id=tumor_sample_ids)
+    input: expand(os.path.join(intermediate_dir, 'somatic_{tumor_sample_id}.filtered.annotated.maf'), tumor_sample_id=tumor_sample_ids)
     output: os.path.join(intermediate_dir, 'somatic.maf')
     singularity: "docker://amcpherson/filtermafs"
     script: "scripts/merge_mafs.py"
@@ -76,8 +70,8 @@ def get_germline_input_paths(wildcards):
 rule germline_filter_maf:
     input: unpack(get_germline_input_paths)
     output: os.path.join(intermediate_dir, 'germline_{normal_sample_id}.filtered.maf')
-    singularity: "docker://rocker/tidyverse"
-    script: "scripts/filter_impact_maf.R"
+    singularity: "docker://amcpherson/filtermafs"
+    script: "scripts/filter_germline_maf.py"
 
 rule germline_fix_sample_id:
     input: os.path.join(intermediate_dir, 'germline_{normal_sample_id}.filtered.maf')
@@ -114,8 +108,8 @@ rule merge_somatic_germline:
 rule annotate_brcaexchange:
     input: os.path.join(intermediate_dir, 'merged.maf')
     output: os.path.join(results_dir, 'cohort.maf')
-    singularity: "docker://rocker/tidyverse"
-    script: "scripts/annotate_brca_exchange.R"
+    singularity: "docker://amcpherson/filtermafs"
+    script: "scripts/annotate_brca_exchange.py"
 
 rule filter_maf:
     input: os.path.join(results_dir, 'cohort.maf')
