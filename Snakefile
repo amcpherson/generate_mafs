@@ -13,10 +13,20 @@ intermediate_dir = config['intermediate_dir']
 results_dir = config['results_dir']
 scripts_dir = config['scripts_dir']
 
+# List of unique tumour samples for somatic calls
 tumor_sample_ids = metadata.query('target_sample_category != "NORMAL"')['target_sample'].unique()
+
+# List of unique normal samples for germline calls
 normal_sample_ids = metadata.query('target_sample_category == "NORMAL"')['target_sample'].unique()
-sample_patient_ids = metadata.set_index('target_sample')['individual'].to_dict()
+
+# List of paths to input files
 paths = metadata.set_index(['target_sample', 'app', 'file_type'])['path'].to_dict()
+
+# We need a set of germline calls for every tumour sample, thus
+# we need to duplicate germline calls where there are multiple
+# tumour samples per patient.  Generate a list of tumour sample ids
+# for each normal sample id to allow replication of germline calls
+# for each tumour sample.
 normal_tumor_map = {}
 for individual, indiv_metadata in metadata.groupby('individual'):
     indiv_normal = indiv_metadata.query('target_sample_category == "NORMAL"')['target_sample'].unique()
@@ -26,6 +36,11 @@ for individual, indiv_metadata in metadata.groupby('individual'):
             if normal_sample_id not in normal_tumor_map:
                 normal_tumor_map[normal_sample_id] = []
             normal_tumor_map[normal_sample_id].append(tumor_sample_id)
+
+# Generate a mapping of normal sample ids used for each tumour sample
+# during somatic calling.  We will add these sample ids into the maf,
+# replacing existing sample ids
+tumour_normal_map = metadata.query('target_sample_category != "NORMAL"').set_index(['target_sample'])['reference_sample'].to_dict()
 
 rule all:
     input:
@@ -49,14 +64,23 @@ rule somatic_filter_maf:
     singularity: "docker://amcpherson/filtermafs"
     shell: 'python {params.scripts_dir}/filter_snv_vcf.py {input.consensus_somatic_maf} {input.museq_paired_annotated} {input.strelka_snv_annotated} {output}'
 
-rule somatic_annotate_maf:
+rule somatic_fix_sample_id:
     input: os.path.join(intermediate_dir, 'somatic_{tumor_sample_id}.filtered.maf')
-    output: os.path.join(intermediate_dir, 'somatic_{tumor_sample_id}.filtered.annotated.maf')
+    output: os.path.join(intermediate_dir, 'somatic_{tumor_sample_id}.filtered.fixup.maf')
+    params:
+        tumor_sample_ids = lambda wildcards: [wildcards.tumor_sample_id],
+        normal_sample_id = lambda wildcards: tumour_normal_map[wildcards.tumor_sample_id],
+    singularity: "docker://amcpherson/filtermafs"
+    script: "scripts/fix_sample_id.py"
+
+rule somatic_annotate_maf:
+    input: os.path.join(intermediate_dir, 'somatic_{tumor_sample_id}.filtered.fixup.maf')
+    output: os.path.join(intermediate_dir, 'somatic_{tumor_sample_id}.filtered.fixup.annotated.maf')
     singularity: "docker://amcpherson/oncokb-annotator"
     shell: 'python /oncokb-annotator/MafAnnotator.py -i {input} -o {output} -b {oncokb_api_key}'
 
 rule somatic_merge_mafs:
-    input: expand(os.path.join(intermediate_dir, 'somatic_{tumor_sample_id}.filtered.annotated.maf'), tumor_sample_id=tumor_sample_ids)
+    input: expand(os.path.join(intermediate_dir, 'somatic_{tumor_sample_id}.filtered.fixup.annotated.maf'), tumor_sample_id=tumor_sample_ids)
     output: os.path.join(intermediate_dir, 'somatic.maf')
     singularity: "docker://amcpherson/filtermafs"
     script: "scripts/merge_mafs.py"
