@@ -102,7 +102,7 @@ rule germline_fix_sample_id:
     output: os.path.join(intermediate_dir, 'germline_{normal_sample_id}.filtered.fixup.maf')
     params:
         normal_sample_id = lambda wildcards: wildcards.normal_sample_id,
-        tumor_sample_ids = lambda wildcards: normal_tumor_map[wildcards.normal_sample_id],
+        tumor_sample_ids = lambda wildcards: normal_tumor_map.get(wildcards.normal_sample_id, []),
     singularity: "docker://amcpherson/filtermafs"
     script: "scripts/fix_sample_id.py"
 
