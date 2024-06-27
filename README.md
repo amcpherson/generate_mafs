@@ -15,4 +15,10 @@ snakemake --jobs 500 --skip-script-cleanup \
   --singularity-args "--bind /juno"
 ```
 
-
+## BRCA Exchange data download
+- Download and symlink variant summary table by:
+```bash
+wget https://brcaexchange.org/backend/downloads/releases/release-12-19-23/release-12-19-23.tar.gz
+tar -xzf release-12-19-23.tar.gz
+ln -s output/variants_output.tsv
+```
