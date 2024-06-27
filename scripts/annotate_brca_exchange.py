@@ -6,9 +6,9 @@ dask.config.set(scheduler='synchronous')
 
 brca_exchange = pd.read_csv(snakemake.config['brcaexchange'], sep='\t')
 
-brca_exchange['Chromosome'] = brca_exchange['genomic_vcf37_source'].str.split(':', expand=True)[0].str.replace('chr', '', regex=False)
-brca_exchange['Start_Position'] = brca_exchange['genomic_vcf37_source'].str.split(':', expand=True)[1].str.replace('g.', '', regex=False).astype(int)
-brca_exchange['ref_alt'] = brca_exchange['genomic_vcf37_source'].str.split(':', expand=True)[2]
+brca_exchange['Chromosome'] = brca_exchange['genomic_vcf38'].str.split(':', expand=True)[0].str.replace('chr', '', regex=False)
+brca_exchange['Start_Position'] = brca_exchange['genomic_vcf38'].str.split(':', expand=True)[1].str.replace('g.', '', regex=False).astype(int)
+brca_exchange['ref_alt'] = brca_exchange['genomic_vcf38'].str.split(':', expand=True)[2]
 brca_exchange['Reference_Allele'] = brca_exchange['ref_alt'].str.split('>', expand=True)[0]
 brca_exchange['Tumor_Seq_Allele2'] = brca_exchange['ref_alt'].str.split('>', expand=True)[1]
 brca_exchange['clinical_significance_brcaexchange'] = brca_exchange['clinical_significance_enigma']
